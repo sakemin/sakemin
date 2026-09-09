@@ -4,8 +4,16 @@ name: header
 # moves — but no two runs publish the same picture: a new random network each
 # run, and the reading of it cycles 0 -> 1 -> 2 -> 0 with the run number.
 on:
+  # bot commits are pushed with GITHUB_TOKEN, which never re-triggers a workflow,
+  # so this cannot loop on its own README commit
+  push:
+    branches: [main]
+    paths: ["scripts/**", ".github/workflows/header.yml"]
+  # GitHub drops scheduled slots under load — hourly runs are regularly skipped
+  # entirely. Three attempts an hour plus the freshness guard below turns "maybe
+  # this hour" into "about once an hour".
   schedule:
-    - cron: "7 * * * *"
+    - cron: "7,27,47 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -20,12 +28,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # Only the first attempt of the hour does any work. A manual run always
+      # repaints, so this never gets in the way of trying something.
+      - name: skip if painted less than 50 minutes ago
+        id: guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          skip=false
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            ts=$(gh api "repos/${{ github.repository }}/releases/tags/live" \
+                   --jq '.assets[] | select(.name=="header.png") | .updated_at' 2>/dev/null || true)
+            if [ -n "$ts" ]; then
+              age=$(( $(date -u +%s) - $(date -u -d "$ts" +%s) ))
+              echo "last painted ${age}s ago"
+              [ "$age" -lt 3000 ] && skip=true
+            fi
+          fi
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@v5
+        if: steps.guard.outputs.skip != 'true'
         with:
           python-version: "3.12"
       - run: pip install --quiet numpy scipy pillow
+        if: steps.guard.outputs.skip != 'true'
 
       - name: paint
+        if: steps.guard.outputs.skip != 'true'
         id: paint
         run: |
           echo "caption=$(python3 scripts/still.py ${{ github.run_number }})" >> "$GITHUB_OUTPUT"
@@ -34,6 +64,7 @@ jobs:
       # add roughly 1.3 GB of history a year that can never be reclaimed without
       # rewriting the repo; replacing one release asset keeps it flat.
       - name: publish the image
+        if: steps.guard.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -45,6 +76,7 @@ jobs:
       # with new bytes means visitors keep seeing the old picture, so the query
       # string carries the run number: new URL, cache miss, fresh fetch.
       - name: point the README at it
+        if: steps.guard.outputs.skip != 'true'
         env:
           CAPTION: ${{ steps.paint.outputs.caption }}
         run: |
@@ -61,6 +93,7 @@ jobs:
           PY
 
       - name: commit the pointer
+        if: steps.guard.outputs.skip != 'true'
         run: |
           git config user.name  "header[bot]"
           git config user.email "header@users.noreply.github.com"
