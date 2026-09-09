@@ -1,6 +1,6 @@
 <!--HEADER-->
 <p align="center">
-  <img src="assets/header.png" width="640" height="320" alt="run 0 · as generated">
+  <img src="https://github.com/sakemin/sakemin/releases/download/live/header.png?v=1" width="640" height="320" alt="run 1 · as 320 sine partials · read as a spectrogram, resynthesized additively, re-analyzed">
 </p>
 <!--/HEADER-->
 
