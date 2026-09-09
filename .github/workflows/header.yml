@@ -1,0 +1,70 @@
+name: header
+
+# Repaints the profile header every hour. The image is a still — nothing in it
+# moves — but no two runs publish the same picture: a new random network each
+# run, and the reading of it cycles 0 -> 1 -> 2 -> 0 with the run number.
+on:
+  schedule:
+    - cron: "7 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: header
+  cancel-in-progress: true
+
+jobs:
+  paint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --quiet numpy scipy pillow
+
+      - name: paint
+        id: paint
+        run: |
+          echo "caption=$(python3 scripts/still.py ${{ github.run_number }})" >> "$GITHUB_OUTPUT"
+
+      # Release assets are not git objects. Committing a ~150 KB PNG hourly would
+      # add roughly 1.3 GB of history a year that can never be reclaimed without
+      # rewriting the repo; replacing one release asset keeps it flat.
+      - name: publish the image
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view live >/dev/null 2>&1 || \
+            gh release create live --title "live header" --notes "repainted hourly by .github/workflows/header.yml"
+          gh release upload live assets/header.png --clobber
+
+      # GitHub serves README images through camo, which caches by URL. Same URL
+      # with new bytes means visitors keep seeing the old picture, so the query
+      # string carries the run number: new URL, cache miss, fresh fetch.
+      - name: point the README at it
+        env:
+          CAPTION: ${{ steps.paint.outputs.caption }}
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, re
+          repo, run = os.environ["GITHUB_REPOSITORY"], os.environ["GITHUB_RUN_NUMBER"]
+          url = f"https://github.com/{repo}/releases/download/live/header.png?v={run}"
+          block = ("<!--HEADER-->\n"
+                   '<p align="center">\n'
+                   f'  <img src="{url}" width="640" height="320" alt="{os.environ["CAPTION"]}">\n'
+                   f'  <br><sub>{os.environ["CAPTION"]}</sub>\n'
+                   "</p>\n<!--/HEADER-->")
+          p = pathlib.Path("README.md"); md = p.read_text(encoding="utf-8")
+          p.write_text(re.sub(r"<!--HEADER-->.*?<!--/HEADER-->", lambda _: block, md, flags=re.S), encoding="utf-8")
+          PY
+
+      - name: commit the pointer
+        run: |
+          git config user.name  "header[bot]"
+          git config user.email "header@users.noreply.github.com"
+          git add README.md
+          git diff --staged --quiet || git commit -m "header: run ${{ github.run_number }}"
+          git push
