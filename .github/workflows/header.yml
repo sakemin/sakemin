@@ -55,7 +55,6 @@ jobs:
           block = ("<!--HEADER-->\n"
                    '<p align="center">\n'
                    f'  <img src="{url}" width="640" height="320" alt="{os.environ["CAPTION"]}">\n'
-                   f'  <br><sub>{os.environ["CAPTION"]}</sub>\n'
                    "</p>\n<!--/HEADER-->")
           p = pathlib.Path("README.md"); md = p.read_text(encoding="utf-8")
           p.write_text(re.sub(r"<!--HEADER-->.*?<!--/HEADER-->", lambda _: block, md, flags=re.S), encoding="utf-8")
