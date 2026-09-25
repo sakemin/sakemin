@@ -1,6 +1,6 @@
 <!--HEADER-->
 <p align="center">
-  <img src="https://github.com/sakemin/sakemin/releases/download/live/header.png?v=106" width="640" height="320" alt="run 106 · as 320 sine partials · read as a spectrogram, resynthesized additively, re-analyzed">
+  <img src="https://github.com/sakemin/sakemin/releases/download/live/header.png?v=107" width="640" height="320" alt="run 107 · as noise-excited ISTFT · read as a spectrogram, one random phase per bin, re-analyzed">
 </p>
 <!--/HEADER-->
 
