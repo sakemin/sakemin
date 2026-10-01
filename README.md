@@ -1,6 +1,6 @@
 <!--HEADER-->
 <p align="center">
-  <img src="https://github.com/sakemin/sakemin/releases/download/live/header.png?v=137" width="640" height="320" alt="run 137 · as noise-excited ISTFT · read as a spectrogram, one random phase per bin, re-analyzed">
+  <img src="https://github.com/sakemin/sakemin/releases/download/live/header.png?v=138" width="640" height="320" alt="run 138 · as generated · random transposed CNN · no training, no gradient">
 </p>
 <!--/HEADER-->
 
