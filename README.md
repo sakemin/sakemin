@@ -1,6 +1,6 @@
 <!--HEADER-->
 <p align="center">
-  <img src="https://github.com/sakemin/sakemin/releases/download/live/header.png?v=372" width="640" height="320" alt="run 372 · as generated · random transposed CNN · no training, no gradient">
+  <img src="https://github.com/sakemin/sakemin/releases/download/live/header.png?v=373" width="640" height="320" alt="run 373 · as 320 sine partials · read as a spectrogram, resynthesized additively, re-analyzed">
 </p>
 <!--/HEADER-->
 
